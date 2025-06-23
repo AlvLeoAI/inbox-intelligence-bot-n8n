@@ -1,0 +1,866 @@
+{
+  "name": "Inbox Intelligence Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -292,
+        720
+      ],
+      "id": "098139c1-cd5f-4f35-9151-833493d6b7ba",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You're an intelligent bot at summarizing emails",
+              "role": "system"
+            },
+            {
+              "content": "=Subject: {{ $('New Email Received (Gmail Trigger').item.json.Subject }}\nEmail body: {{ $('New Email Received (Gmail Trigger').item.json.snippet }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        216,
+        200
+      ],
+      "id": "2d043d5e-3a71-43dc-b1eb-5ca5d2589147",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        294,
+        0
+      ],
+      "id": "b5ee268d-ce1e-44bf-aa50-898f9c38cc29",
+      "name": "Mark a message as read",
+      "webhookId": "2d2d23a1-58e2-4eaf-b528-0198bb7513ec",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "=",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+            "Date": "={{ $now }}",
+            "Subject Line": "={{ $('New Email Received (Gmail Trigger').item.json.Subject }}",
+            "Summary": "={{ $json.message.content }}",
+            "Snippet": "={{ $('New Email Received (Gmail Trigger').item.json.threadId }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject Line",
+              "displayName": "Subject Line",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Snippet",
+              "displayName": "Snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        592,
+        200
+      ],
+      "id": "29b914cd-553f-4b87-85ff-94090b0a2dfc",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.message.content.subject_line }}",
+        "message": "={{ $json.message.content.email_body }}",
+        "options": {
+          "threadId": "={{ $('New Email Received (Gmail Trigger').item.json.threadId }}",
+          "sendTo": "={{ $('New Email Received (Gmail Trigger').item.json.From }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        400
+      ],
+      "id": "56cfc781-2b7a-40f0-8909-1e24bf680862",
+      "name": "Create a draft",
+      "webhookId": "86efad7a-a4f4-432f-a990-db236b59161f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "message": "={{ $json.message.content.email_body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        600
+      ],
+      "id": "0c2b8983-cfe5-4ede-8d49-18308b538c56",
+      "name": "Reply to a message",
+      "webhookId": "f2533aba-c489-4dd6-aaae-3f341ea09f0c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You received a job application email. Extract the following details about the candidate:\n\n- Full Name\n- Email\n- Location (if mentioned)\n- Role Applied For\n- Summary of Experience (2-3 sentences)\n- Companies Mentioned\n- LinkedIn URL (if present)\n\nEmail:\n{{ $('New Email Received (Gmail Trigger').item.json.From }}\nBody: {{ $('New Email Received (Gmail Trigger').item.json.snippet }}\nRespond in JSON format like this:\n{\n  \"name\": \"...\",\n  \"email\": \"...\",\n  \"location\": \"...\",\n  \"role\": \"...\",\n  \"experience_summary\": \"...\",\n  \"companies\": [\"...\", \"...\"],\n  \"linkedin\": \"...\"\n}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        216,
+        800
+      ],
+      "id": "79869b71-79c9-4c8e-baf5-2a38b4de7a10",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblK883KZ5NVPfK5K",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "Location": "={{ $json.location }}",
+            "Role": "={{ $json.role }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Summary",
+              "displayName": "Experience Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        812,
+        800
+      ],
+      "id": "ba71315d-30ff-4382-93a9-f44d5c09a753",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You're an intelligent bot at replying to emails. Please sign off on all emails as follows:\n\"Best,\nAlvaro\"\n\nAlso separate paragraphs by lines breaks.",
+              "role": "system"
+            },
+            {
+              "content": "=Heres the email to reply to:\nSubject: {{ $('New Email Received (Gmail Trigger').item.json.Subject }}\nEmail body: {{ $('New Email Received (Gmail Trigger').item.json.snippet }}\nThis email is from: {{ $('New Email Received (Gmail Trigger').item.json.From }}"
+            },
+            {
+              "content": "Please format the data in JSON format:\n{\n\"subject_line\": \"\",\n\"email_body\": \"\"\n}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        216,
+        400
+      ],
+      "id": "1ab62874-c52e-46bf-94f3-80667313958e",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You're an intelligent bot at replying to sales emails. Please sign off on all emails as follows:\n\"Best,\nAlvaro\"\n\nAlso separate paragraphs by lines breaks.",
+              "role": "system"
+            },
+            {
+              "content": "=Heres the email to reply to:\nSubject: {{ $('New Email Received (Gmail Trigger').item.json.Subject }}\nEmail body: {{ $('New Email Received (Gmail Trigger').item.json.snippet }}\nThis email is from: {{ $('New Email Received (Gmail Trigger').item.json.From }}"
+            },
+            {
+              "content": "Please format the data in JSON format:\n{\n\"subject_line\": \"\",\n\"email_body\": \"\"\n}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        216,
+        600
+      ],
+      "id": "76751f22-9ce3-4339-ad66-591030f8b590",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "*/5 * * * *"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -600,
+        500
+      ],
+      "id": "2b50e5fe-b4c9-41dd-bfac-3cd4e59b825c",
+      "name": "New Email Received (Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "=Subject: {{ $json.Subject }}\nEmail body: {{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Promotions",
+              "description": "This is any email looking to sell me things"
+            },
+            {
+              "category": "Social",
+              "description": "Any email from a social media site like YouTube or Facebook or Instagram"
+            },
+            {
+              "category": "Personal",
+              "description": "An email sent from a friend or a family members or something personal to me outside of work"
+            },
+            {
+              "category": "Sales",
+              "description": "Anything regarding clients sending over documents, sales, buy services"
+            },
+            {
+              "category": "Recruitment",
+              "description": "Anyone looking for a job, or to join our team"
+            },
+            {
+              "category": "Miscellaneous",
+              "description": "Anything that doesn't fall within the other categories"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        500
+      ],
+      "id": "55db7e8d-c4f9-4b33-945a-703d715debc9",
+      "name": "Email Category Classifier (GPT)"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_6324381779785103545"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        0
+      ],
+      "id": "593d9e60-10d7-402d-85b6-70f9d6f4e52e",
+      "name": "Tag as Promotions",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_6287770491877343233"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        200
+      ],
+      "id": "20275535-515c-4180-9546-7d41be130770",
+      "name": "Tag as Social Media",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": ""
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_1512453476066057765"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        400
+      ],
+      "id": "0eeb8937-68af-4a8a-ae90-50867b2c5a88",
+      "name": "Tag as Personal",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_8065254054344188549"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        600
+      ],
+      "id": "38801c8f-aca8-480c-81dc-ff39d8d29529",
+      "name": "Tag as Sales",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_3691768281595392685"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        800
+      ],
+      "id": "6a376ae1-9572-4931-80e7-a0405acc5f42",
+      "name": "Tag as Recruitment",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('New Email Received (Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4911870947199687026"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -4,
+        1000
+      ],
+      "id": "422a869d-e6c3-477e-91f8-75be5768ac29",
+      "name": "Tag as Miscellaneous",
+      "webhookId": "f546eda8-46ce-42e3-a0de-047ee73a9b33",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 1: Clean the response (remove backticks, `json`, newlines)\nconst raw = $json[\"message\"][\"content\"]\n  .replace(/```json|```/g, \"\")\n  .trim();\n\n// Step 2: Parse the cleaned JSON string\nconst parsed = JSON.parse(raw);\n\n// Step 3: Return object in n8n format\nreturn [\n  {\n    json: {\n      name: parsed.name || \"\",\n      email: parsed.email || \"\",\n      location: parsed.location || \"\",\n      role: parsed.role || \"\",\n      experience: parsed.experience_summary || \"\",\n      companies: parsed.companies.join(\", \") || \"\",\n      linkedin: parsed.linkedin || \"\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        800
+      ],
+      "id": "27d456b2-5aa2-4c54-a2cc-a33e81fbd1af",
+      "name": "Parse Candidate JSON for Airtable"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Category Classifier (GPT)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse Candidate JSON for Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Email Received (Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Email Category Classifier (GPT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Category Classifier (GPT)": {
+      "main": [
+        [
+          {
+            "node": "Tag as Promotions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag as Social Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag as Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag as Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag as Recruitment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag as Miscellaneous",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Tag as Promotions": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag as Social Media": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag as Personal": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag as Sales": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag as Recruitment": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Candidate JSON for Airtable": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "afe6b976-dce8-4fc3-adc0-e0300a8b9a42",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "13e20c97097a8d1de6d76dbd27c72163b6f6ec6e4a342023f3f77157e413842e"
+  },
+  "id": "oExoA92aUYhrvO4h",
+  "tags": []
+}
